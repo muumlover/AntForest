@@ -44,7 +44,7 @@ class AntForest {
         var source = event.source
         while (source.childCount > 0) {
             source = source.getChild(0)
-            Log.d(TAG, "Class: " + source.className)
+            Log.d(TAG, "Class: ${source.className}")
             if (source.className == "android.webkit.WebView") {
                 setWebkitRoot(source)
                 break
@@ -53,15 +53,15 @@ class AntForest {
     }
 
     private fun setWebkitRoot(source: AccessibilityNodeInfo) {
+        Log.d(TAG, "设置 WebkitRoot 节点: $source")
         this.webkitRoot = source
     }
 
-    private fun getChildByName(node: AccessibilityNodeInfo, childName: String): AccessibilityNodeInfo? {
+    private fun getChildById(node: AccessibilityNodeInfo, childName: String): AccessibilityNodeInfo? {
         for (i in 0 until node.childCount) {
             val child = node.getChild(i)
-            Log.d(TAG, "index $i of ${node.childCount} is $child")
-            if (child == null)
-                continue
+            Log.d(TAG, "查找 $childName: index $i of ${node.childCount} is $child")
+            if (child == null) continue
             if (child.viewIdResourceName == childName)
                 return child
         }
@@ -70,51 +70,63 @@ class AntForest {
 
     private fun getJAppOutter(): AccessibilityNodeInfo? {
         val webkitRoot = this.webkitRoot
-        Log.d(TAG, "webkitRoot:")
-        Log.d(TAG, webkitRoot.toString())
-        if (webkitRoot == null)
-            return null
-        return getChildByName(webkitRoot, "J_app_outter")
+        Log.d(TAG, "找到 WebkitRoot: $webkitRoot")
+        return if (webkitRoot == null) null
+        else getChildById(webkitRoot, "J_app_outter")
     }
 
     private fun getJAfHome(): AccessibilityNodeInfo? {
         val jAppOutter = this.getJAppOutter()
-        Log.d(TAG, "J_app_outter:")
-        Log.d(TAG, jAppOutter.toString())
-        if (jAppOutter == null)
-            return null
-        return getChildByName(jAppOutter, "J_af_home")
+        Log.d(TAG, "找到 J_app_outter: $jAppOutter")
+        return if (jAppOutter == null) null
+        else getChildById(jAppOutter, "J_af_home")
     }
 
     private fun getJHomePanel(): AccessibilityNodeInfo? {
         val jAfHome = this.getJAfHome()
-        Log.d(TAG, "J_af_home:")
-        Log.d(TAG, jAfHome.toString())
-        if (jAfHome == null)
-            return null
-        return getChildByName(jAfHome, "J_home_panel")
+        Log.d(TAG, "找到 J_af_home: $jAfHome")
+        return if (jAfHome == null) null
+        else getChildById(jAfHome, "J_home_panel")
     }
 
     private fun getJBarrierFree(): AccessibilityNodeInfo? {
         val jAfHome = this.getJAfHome()
-        Log.d(TAG, "J_af_home:")
-        Log.d(TAG, jAfHome.toString())
-        if (jAfHome == null)
-            return null
-        return getChildByName(jAfHome, "J_barrier_free")
+        Log.d(TAG, "找到 J_af_home: $jAfHome")
+        return if (jAfHome == null) null
+        else getChildById(jAfHome, "J_barrier_free")
+    }
+
+    private fun getMoreFirendNode(): AccessibilityNodeInfo? {
+        val webkitRoot = this.webkitRoot ?: return null
+        Log.d(TAG, "找到 WebkitRoot: $webkitRoot")
+        for (i in 0 until webkitRoot.childCount) {
+            val root = webkitRoot.getChild(i) ?: return null
+            if (root.viewIdResourceName == null) {
+                for (j in 0 until webkitRoot.childCount) {
+                    val node = webkitRoot.getChild(i)
+                    if (node.contentDescription == "查看更多好友")
+                        return node
+                }
+            }
+        }
+        return null
     }
 
     fun getAllBall(): List<AccessibilityNodeInfo> {
-        Log.d(TAG, "func:getAllBall")
+        Log.d(TAG, "Func: getAllBall 查找能量球")
         val allBall = ArrayList<AccessibilityNodeInfo>()
         val J_barrier_free = getJBarrierFree()
-        Log.d(TAG, "J_barrier_free:")
-        Log.d(TAG, J_barrier_free.toString())
+        Log.d(TAG, "找到 J_barrier_free: $J_barrier_free")
         if (J_barrier_free != null)
             for (i in 0 until J_barrier_free.childCount - 6) {
                 allBall.add(J_barrier_free.getChild(i))
             }
         return allBall
+    }
+
+    fun goMoreFriendPage() {
+        val node = getMoreFirendNode() ?: return
+        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
 
