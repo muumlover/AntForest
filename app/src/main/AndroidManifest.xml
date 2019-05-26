@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
           package="com.muumlover.antforest">
-
     <application
             android:allowBackup="true"
             android:icon="@mipmap/ic_launcher"
@@ -29,5 +28,4 @@
                        android:resource="@xml/accessibility"/>
         </service>
     </application>
-
 </manifest>

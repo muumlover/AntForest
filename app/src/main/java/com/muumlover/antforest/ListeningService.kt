@@ -5,7 +5,6 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 
 class ListeningService : AccessibilityService() {
     private val TAG = javaClass.name
@@ -52,12 +51,16 @@ class ListeningService : AccessibilityService() {
                 val className = event.className.toString()
                 Log.v(TAG, "TYPE_WINDOW_CONTENT_CHANGED :: $className")
                 when (className) {
+                    "com.eg.android.AlipayGphone.AlipayLogin" -> {
+                        Global.ant.clearWebkitRoot()
+                    }
                     "com.alipay.mobile.nebulacore.ui.H5Activity" -> {
-                        Global.ant.loadWebView(event)
+                        //Class is: android.widget.FrameLayout
+                        Global.ant.analysisFrameLayout(event)
                         handleViewUpdate(event)
                     }
-                    "android.webkit.WebView", "com.uc.webkit.be" +
-                            "" -> {
+                    "com.uc.webkit.be", "android.webkit.WebView" -> {
+                        Global.ant.setWebkitRoot(event)
                         handleViewUpdate(event)
                     }
                 }
@@ -105,11 +108,7 @@ class ListeningService : AccessibilityService() {
         val allBall = Global.ant.getAllBall()
         Log.i(TAG, "找到" + allBall.size + "个能量球")
         General.showToast(this, "找到" + allBall.size + "个能量球")
-        if (allBall.isNotEmpty()) {
-            for (ball in allBall) {
-                ball.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            }
-        }
+        Global.ant.collageOwn(allBall)
         Global.ant.goMoreFriendPage()
     }
 

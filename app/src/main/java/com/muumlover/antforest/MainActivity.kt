@@ -21,27 +21,20 @@ class MainActivity : AppCompatActivity() {
         if (softState && sysState) {
             Log.d(TAG, "无障碍服务运行中")
             Global.ant.open(applicationContext)
-        } else if (!softState && sysState) {
+        }
+        if (!softState && sysState) {
             Log.e(TAG, "无障碍服务异常，软件服务未启动，尝试启动")
             try {
-                this.startActivity(Intent(this@MainActivity, ListeningService::class.java))
-                Log.e(TAG, "软件服务启动成功")
-//              this.stopService(Intent(this@MainActivity, ListeningService::class.java))
+                this.stopService(Intent(this@MainActivity, ListeningService::class.java))
+//                this.startService(Intent(this@MainActivity, ListeningService::class.java))
+                Log.d(TAG, "软件服务启动成功")
             } catch (e: Exception) {
                 Log.e(TAG, "软件服务启动失败")
                 General.showToast(this, "无障碍服务异常\r\n软件服务启动失败")
                 e.printStackTrace()
             }
-        } else if (softState && !sysState) {
-            Log.e(TAG, "无障碍服务异常，系统服务未启动")
-            General.showToast(this, "无障碍服务异常\r\n系统服务未启动，请手动开启")
-            try {
-                this.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            } catch (e: Exception) {
-                this.startActivity(Intent(Settings.ACTION_SETTINGS))
-                e.printStackTrace()
-            }
-        } else {
+        }
+        if (!sysState) {
             Log.d(TAG, "无障碍服务已停止")
             General.showToast(this, "AntForest\r\n无障碍服务已关闭，请手动开启")
             try {

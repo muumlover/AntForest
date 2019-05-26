@@ -1,10 +1,15 @@
 package com.muumlover.antforest
 
+import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
 import android.content.Context
+import android.graphics.Path
+import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import java.util.*
+
 
 class AntForest {
     private val TAG = "AntForest"
@@ -40,21 +45,45 @@ class AntForest {
         val moreFirend = "查看更多好友"
     }
 
-    fun loadWebView(event: AccessibilityEvent) {
-        var source = event.source
+    fun analysisFrameLayout(event: AccessibilityEvent) {
+        val nodeFrameLayout = event.source
+        // nodeFrameLayout: android.widget.FrameLayout
+        for (i in 0 until nodeFrameLayout.childCount) {
+            val child = nodeFrameLayout.getChild(i)
+            if (child.className == "android.widget.TextView") {
+                Log.d(TAG, "当前页面标题为：${child.text}")
+                when (child.text) {
+                    "蚂蚁森林" -> {
+                        Log.d(TAG, "当前是 蚂蚁森林 首页")
+                    }
+                }
+            }
+        }
+        setWebkitRoot(event)
+    }
+
+
+    fun setWebkitRoot(event: AccessibilityEvent) {
+        var source: AccessibilityNodeInfo = event.source ?: return
         while (source.childCount > 0) {
             source = source.getChild(0)
             Log.d(TAG, "Class: ${source.className}")
             if (source.className == "android.webkit.WebView") {
-                setWebkitRoot(source)
+                Log.d(TAG, "设置 WebkitRoot 节点: $source")
+                this.webkitRoot = source
+//                if (this.webkitRoot == null) {
+//                    Log.d(TAG, "WebkitRoot 节点已更新")
+//                    this.webkitRoot = source
+//                } else {
+//                    Log.d(TAG, "WebkitRoot 节点未更新")
+//                }
                 break
             }
         }
     }
 
-    private fun setWebkitRoot(source: AccessibilityNodeInfo) {
-        Log.d(TAG, "设置 WebkitRoot 节点: $source")
-        this.webkitRoot = source
+    fun clearWebkitRoot() {
+        this.webkitRoot = null
     }
 
     private fun getChildById(node: AccessibilityNodeInfo, childName: String): AccessibilityNodeInfo? {
@@ -112,21 +141,53 @@ class AntForest {
         return null
     }
 
+    fun goMoreFriendPage() {
+        val node = getMoreFirendNode() ?: return
+        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    private val descList = listOf("地图", "成就", "通知", "背包", "任务", "攻略", "发消息", "弹幕", "浇水")
     fun getAllBall(): List<AccessibilityNodeInfo> {
         Log.d(TAG, "Func: getAllBall 查找能量球")
         val allBall = ArrayList<AccessibilityNodeInfo>()
-        val J_barrier_free = getJBarrierFree()
-        Log.d(TAG, "找到 J_barrier_free: $J_barrier_free")
-        if (J_barrier_free != null)
-            for (i in 0 until J_barrier_free.childCount - 6) {
-                allBall.add(J_barrier_free.getChild(i))
+        val jBarrierFree = getJBarrierFree()
+        Log.d(TAG, "找到 J_barrier_free: $jBarrierFree")
+        if (jBarrierFree != null)
+            for (i in 0 until jBarrierFree.childCount) {
+                val child = jBarrierFree.getChild(i) ?: continue
+                Log.d(TAG, "检查是否为能量球：$child")
+                if (child.contentDescription in descList) continue
+                if (child.contentDescription == null) continue
+                if (child.contentDescription == " " ||
+                    (child.contentDescription.length >= 2 && child.contentDescription.subSequence(0, 2) == "收集")
+                ) {
+                    allBall.add(jBarrierFree.getChild(i))
+                }
             }
         return allBall
     }
 
-    fun goMoreFriendPage() {
-        val node = getMoreFirendNode() ?: return
-        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+//    fun clickNode(node: AccessibilityNodeInfo) {
+//        node.b
+//        val x = 0
+//        val y = 0
+//        val order = arrayOf("input", "tap", " ", x.toString() + "", y.toString() + "")
+//        try {
+//            ProcessBuilder(*order).start()
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//        }
+//
+//    }
+
+
+    fun collageOwn(allBall: List<AccessibilityNodeInfo>) {
+        if (allBall.isNotEmpty()) {
+            for (ball in allBall) {
+//                ball.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                useGestureClick(ball, ListeningService())
+            }
+        }
     }
 
 
@@ -134,4 +195,22 @@ class AntForest {
 //        AccessibilityNodeInfo nodeInfo = getRootIn
 //        List<AccessibilityNodeInfo> list = nodeInfo.find
 //    }
+
+    fun useGestureClick(info: AccessibilityNodeInfo?, accessibilityService: AccessibilityService) {
+        if (info == null) return
+        val rect = Rect()
+        info.getBoundsInScreen(rect)
+        val builder = GestureDescription.Builder()
+        val path = Path()
+        path.moveTo(rect.centerX().toFloat(), rect.centerY().toFloat())
+        val gestureDescription = builder
+            .addStroke(GestureDescription.StrokeDescription(path, 100, 50))
+            .build()
+        accessibilityService.dispatchGesture(gestureDescription, object : AccessibilityService.GestureResultCallback() {
+            override fun onCompleted(gestureDescription: GestureDescription) {
+                super.onCompleted(gestureDescription)
+            }
+        }, null)
+    }
 }
+
